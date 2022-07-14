@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const ftpClient = require( './client' );
 const readline = require('readline');
 

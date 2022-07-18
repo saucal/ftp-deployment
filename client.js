@@ -88,6 +88,7 @@ class ftpClient {
 						console.log( 'delete', remoteFullPath );
 						return self.voidPromise( true );
 					default:
+						console.log( 'rm: ' + remoteFullPath );
 						return self.client.delete( remoteFullPath, true );
 				}
 			} )
@@ -126,6 +127,7 @@ class ftpClient {
 						console.log( 'put', localFullPath, remoteFullPath );
 						return self.voidPromise( true );
 					default:
+						console.log( 'put: ' + remoteFullPath );
 						return self.client.put( fs.createReadStream( localFullPath ), remoteFullPath );
 				}
 			} );
@@ -139,6 +141,7 @@ class ftpClient {
 				console.log( 'mkdirp', remoteFullPath );
 				return self.voidPromise();
 			default:
+				console.log( 'mkdirp: ' + remoteFullPath );
 				return self.client.mkdir( remoteFullPath, true );
 		}
 	}
@@ -158,6 +161,7 @@ class ftpClient {
 								return self.client
 									.list( remoteFullPath )
 									.then( function( data ){
+										console.log( 'rmdir: ' + remoteFullPath );
 										if ( data.length === 0 ) {
 											return self.client.rmdir( remoteFullPath );
 										}

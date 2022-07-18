@@ -15,7 +15,7 @@ program
 	.option('-p, --pass <pass>', 'Password' )
 	.option('--remote-root <path>', 'Remote Root (absolute)' )
 	.option('--local-root <path>', 'Local Root (absolute or relative to cwd)', '.' )
-	.option('--debug', 'Enable Debug', true);
+	.option('--debug', 'Enable Debug', false);
 
 program.parse();
 

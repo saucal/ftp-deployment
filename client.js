@@ -4,6 +4,7 @@ const fs = require('fs');
 
 class ftpClient {
 	constructor(config) {
+		this.mkdirCache = {};
 		this.connected = -1;
 		this.config = config
 
@@ -136,6 +137,10 @@ class ftpClient {
 	mkdirp( dirPath ) {
 		const self = this;
 		let remoteFullPath = path.join( self.config.remoteRoot, dirPath );
+		if ( typeof self.mkdirCache[remoteFullPath] !== 'undefined' ) {
+			return self.voidPromise();
+		}
+		self.mkdirCache[remoteFullPath] = true;
 		switch( self.config.type ) {
 			case 'void':
 				console.log( 'mkdirp', remoteFullPath );

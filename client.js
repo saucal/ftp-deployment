@@ -136,58 +136,70 @@ class ftpClient {
 
 	mkdirp( dirPath ) {
 		const self = this;
-		let remoteFullPath = path.join( self.config.remoteRoot, dirPath );
-		if ( typeof self.mkdirCache[remoteFullPath] !== 'undefined' ) {
-			return self.voidPromise();
-		}
-		self.mkdirCache[remoteFullPath] = true;
-		switch( self.config.type ) {
-			case 'void':
-				console.log( 'mkdirp', remoteFullPath );
-				return self.voidPromise();
-			default:
-				console.log( 'mkdirp: ' + remoteFullPath );
-				return self.client.mkdir( remoteFullPath, true );
-		}
+		return self
+			.maybeConnect()
+			.then( function() {
+				let remoteFullPath = path.join( self.config.remoteRoot, dirPath );
+				if ( typeof self.mkdirCache[remoteFullPath] !== 'undefined' ) {
+					return self.voidPromise();
+				}
+				self.mkdirCache[remoteFullPath] = true;
+				switch( self.config.type ) {
+					case 'void':
+						console.log( 'mkdirp', remoteFullPath );
+						return self.voidPromise();
+					default:
+						console.log( 'mkdirp: ' + remoteFullPath );
+						return self.client.mkdir( remoteFullPath, true );
+				}
+			})
 	}
 
 	rmdirIfEmpty( dirPath ) {
 		const self = this;
 		const paths = self.leadingPaths( dirPath ).reverse();
-		let chain = self.voidPromise();
-		paths.forEach( function( thisPath ) {
-			let remoteFullPath = path.join( self.config.remoteRoot, thisPath );
-			chain = chain.then(function() {
-				return self.client
-					.exists( remoteFullPath )
-					.then( function( exists ) {
-						switch ( exists ) {
-							case 'd':
-								return self.client
-									.list( remoteFullPath )
-									.then( function( data ){
-										console.log( 'rmdir: ' + remoteFullPath );
-										if ( data.length === 0 ) {
-											return self.client.rmdir( remoteFullPath );
-										}
-									} )
-						}
-					} )
-			} );
-		} );
+		return self
+			.maybeConnect()
+			.then( function() {
+				let chain = self.voidPromise();
+				paths.forEach( function( thisPath ) {
+					let remoteFullPath = path.join( self.config.remoteRoot, thisPath );
+					chain = chain.then(function() {
+						return self.client
+							.exists( remoteFullPath )
+							.then( function( exists ) {
+								switch ( exists ) {
+									case 'd':
+										return self.client
+											.list( remoteFullPath )
+											.then( function( data ){
+												console.log( 'rmdir: ' + remoteFullPath );
+												if ( data.length === 0 ) {
+													return self.client.rmdir( remoteFullPath );
+												}
+											} )
+								}
+							} )
+					} );
+				} );
 
-		return chain;
+				return chain;
+			})
 	}
 
 	cwd() {
 		const self = this;
-		switch( self.config.type ) {
-			case 'void':
-				console.log( 'cwd' );
-				return self.voidPromise();
-			default:
-				return self.client.cwd();
-		}
+		return self
+			.maybeConnect()
+			.then( function() {
+				switch( self.config.type ) {
+					case 'void':
+						console.log( 'cwd' );
+						return self.voidPromise();
+					default:
+						return self.client.cwd();
+				}
+			})
 	}
 
 	end() {

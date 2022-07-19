@@ -2,9 +2,10 @@ const SFTPClient = require('ssh2-sftp-client');
 const path = require('path');
 const fs = require('fs');
 
+global.mkdirCache = {};
+
 class ftpClient {
 	constructor(config) {
-		this.mkdirCache = {};
 		this.connected = -1;
 		this.config = config
 
@@ -140,10 +141,10 @@ class ftpClient {
 			.maybeConnect()
 			.then( function() {
 				let remoteFullPath = path.join( self.config.remoteRoot, dirPath );
-				if ( typeof self.mkdirCache[remoteFullPath] !== 'undefined' ) {
+				if ( typeof global.mkdirCache[remoteFullPath] !== 'undefined' ) {
 					return self.voidPromise();
 				}
-				self.mkdirCache[remoteFullPath] = true;
+				global.mkdirCache[remoteFullPath] = true;
 				switch( self.config.type ) {
 					case 'void':
 						console.log( 'mkdirp', remoteFullPath );

@@ -56,6 +56,10 @@ class ftpClient {
 								} )
 						})
 					}
+
+					chain = chain.then( function() {
+						return self.mkdirp( true );
+					} );
 			
 					chain = chain.then( function() {
 						let localRoot = self.conf( 'localRoot' );
@@ -140,7 +144,11 @@ class ftpClient {
 		return self
 			.maybeConnect()
 			.then( function() {
-				let remoteFullPath = path.join( self.config.remoteRoot, dirPath );
+				let remoteFullPath = self.config.remoteRoot;
+				if ( typeof dirPath === 'string' ) {
+					remoteFullPath = path.join( remoteFullPath, dirPath );
+				}
+
 				if ( typeof global.mkdirCache[remoteFullPath] !== 'undefined' ) {
 					return self.voidPromise();
 				}

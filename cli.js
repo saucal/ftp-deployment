@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const ftpClient = require( './client' );
-const readline = require('readline');
 
 const { program } = require('commander');
 const fs = require('fs');
@@ -37,39 +36,6 @@ class cliFTPClient extends ftpClient {
 				}
 			} : undefined,
 		} );
-	}
-	process( readStream ) {
-		const self = this;
-		return new Promise( function( resolve, reject ) {
-			const rl = readline.createInterface({
-				input: readStream,
-				crlfDelay: Infinity
-			});
-
-			let chain = self.voidPromise();
-
-			rl.on( 'line', function( path ) {
-				chain = chain.then( function() {
-					return self.handleProcessLine( path );
-				} );
-			}  );
-
-			rl.on( 'close', function() {
-				chain = chain.then( function() {
-					resolve();
-				} );
-			} );
-		})
-	}
-
-	handleProcessLine( line ) {
-		var path = line.substr( 2 );
-		var action = line.substr( 0, 1 );
-		if ( '-' === action ) {
-			return this.rm( path, true );
-		} else {
-			return this.put( path, true );
-		}
 	}
 }
 

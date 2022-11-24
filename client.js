@@ -237,11 +237,23 @@ class ftpClient {
 	}
 
 	parseConfig( config ) {
+		// Define config
+		if ( typeof config === 'undefined' ) {
+			config = {};
+		}
+
+		// Define ignore default
+		if ( typeof config.ignore === 'undefined' ) {
+			config.ignore = '';
+		}
+
+		// Parse ignore
 		if( 0 === config.ignore.length ) {
 			config.ignore = []
 		} else {
 			config.ignore = config.ignore.split( "\n" ).map( (item) => item.trim() );
 		}
+
 		return config;
 	}
 

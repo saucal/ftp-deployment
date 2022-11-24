@@ -288,7 +288,7 @@ class ftpClient {
 
 		for ( let i in config.ignore ) {
 			let pattern = config.ignore[i];
-			if ( ! minimatch( path, pattern ) ) {
+			if ( minimatch( '/' + path, pattern ) ) {
 				console.log( 'ignored: ' + path );
 				return;
 			}

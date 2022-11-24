@@ -2,6 +2,7 @@ const SFTPClient = require('ssh2-sftp-client');
 const path = require('path');
 const fs = require('fs');
 const readline = require('readline');
+const minimatch = require("minimatch")
 
 global.mkdirCache = {};
 
@@ -235,8 +236,18 @@ class ftpClient {
 		return parts;
 	}
 
-	process( readStream ) {
+	parseConfig( config ) {
+		if( 0 === config.ignore.length ) {
+			config.ignore = []
+		} else {
+			config.ignore = config.ignore.split( "\n" ).map( (item) => item.trim() );
+		}
+		return config;
+	}
+
+	process( readStream, config ) {
 		const self = this;
+		config = self.parseConfig( config );
 		return new Promise( function( resolve, reject ) {
 			const rl = readline.createInterface({
 				input: readStream,
@@ -247,7 +258,7 @@ class ftpClient {
 
 			rl.on( 'line', function( path ) {
 				chain = chain.then( function() {
-					return self.handleProcessLine( path );
+					return self.handleProcessLine( path, config );
 				} );
 			}  );
 
@@ -259,9 +270,18 @@ class ftpClient {
 		})
 	}
 
-	handleProcessLine( line ) {
+	handleProcessLine( line, config ) {
 		var path = line.substr( 2 );
 		var action = line.substr( 0, 1 );
+
+		for ( let i in config.ignore ) {
+			let pattern = config.ignore[i];
+			if ( ! minimatch( path, pattern ) ) {
+				console.log( 'ignored: ' + path );
+				return;
+			}
+		}
+
 		if ( '-' === action ) {
 			return this.rm( path, true );
 		} else {

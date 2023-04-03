@@ -166,9 +166,9 @@ class ftpClient {
 			})
 	}
 
-	rmdirIfEmpty( dirPath ) {
+	rmdirIfEmpty( dirPath, recursive = true ) {
 		const self = this;
-		const paths = self.leadingPaths( dirPath ).reverse();
+		const paths = recursive ? self.leadingPaths( dirPath ).reverse() : [ dirPath ];
 		return self
 			.maybeConnect()
 			.then( function() {
@@ -176,21 +176,36 @@ class ftpClient {
 				paths.forEach( function( thisPath ) {
 					let remoteFullPath = path.join( self.config.remoteRoot, thisPath );
 					chain = chain.then(function() {
-						return self.client
-							.exists( remoteFullPath )
-							.then( function( exists ) {
-								switch ( exists ) {
-									case 'd':
-										return self.client
-											.list( remoteFullPath )
-											.then( function( data ){
-												console.log( 'rmdir: ' + remoteFullPath );
-												if ( data.length === 0 ) {
-													return self.client.rmdir( remoteFullPath );
-												}
-											} )
-								}
-							} )
+						switch( self.config.type ) {
+							case 'void':
+								console.log( 'exist', remoteFullPath );
+								return self.voidPromise().then(function(){
+									console.log( 'list', remoteFullPath );
+									return self.voidPromise().then(function(){
+										console.log( 'rmdir', remoteFullPath );
+										return self.voidPromise()
+									})
+								});
+							default:
+								console.log( 'exist: ' + remoteFullPath );
+								return self.client
+									.exists( remoteFullPath )
+									.then( function( exists ) {
+										switch ( exists ) {
+											case 'd':
+												console.log( 'list: ' + remoteFullPath );
+												return self.client
+													.list( remoteFullPath )
+													.then( function( data ){
+														console.log( 'rmdir: ' + remoteFullPath );
+														if ( data.length === 0 ) {
+															return self.client.rmdir( remoteFullPath );
+														}
+													} )
+										}
+									} )
+						}
+						
 					} );
 				} );
 

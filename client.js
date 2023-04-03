@@ -10,6 +10,12 @@ class ftpClient {
 	constructor(config) {
 		this.connected = -1;
 		this.config = config
+		this.queue = {
+			'*': [], // create path
+			'+': [], // upload
+			'-': [], // remove file
+			'_': [], // maybe cleanup path
+		}
 
 		console.log(config);
 		switch( this.config.type ) {
@@ -291,15 +297,74 @@ class ftpClient {
 			}  );
 
 			rl.on( 'close', function() {
-				chain = chain.then( function() {
+				chain = chain.then(function(){
+					return self.processQueue();	
+				}).then( function() {
 					resolve();
 				} );
 			} );
 		})
 	}
 
+	processQueue() {
+		const self = this;
+		return new Promise( function( resolve, reject ) {
+			self.sortQueue('*');
+			self.sortQueue('+');
+			self.sortQueue('-');
+			self.sortQueue('_', false );
+			let chain = self.voidPromise();
+
+			self.queue['*'].forEach(function(item){
+				chain = chain.then( function() { 
+					return self.mkdirp( item )
+				} );
+			});
+			self.queue['+'].forEach(function(item){
+				chain = chain.then( function() {
+					return self.put( item, false )
+				} );
+			});
+			self.queue['-'].forEach(function(item){
+				chain = chain.then( function() {
+					return self.rm( item, false )
+				} );
+			});
+			self.queue['_'].forEach(function(item){
+				chain = chain.then( function() {
+					return self.rmdirIfEmpty( item, false )
+				} );
+			});
+			chain.then( function() {
+				resolve();
+			});
+		} );
+	}
+
+	pushToQueue( action, path ) {
+		var self = this;
+		if( self.queue[action].indexOf( path ) === -1 ) {
+			self.queue[action].push(path)
+		}
+	}
+
+	sortQueue( action, asc = true ) {
+		var self = this;
+		self.queue[action].sort( function( a, b ) {
+			var aLen = (a.match(/\//g) || []).length
+			var bLen = (b.match(/\//g) || []).length
+			if( asc ) {
+				return aLen - bLen || a.localeCompare(b);
+			} else {
+				return bLen - aLen || a.localeCompare(b);
+			}
+		} )
+	}
+
 	handleProcessLine( line, config ) {
-		var path = line.substr( 2 );
+		var self = this;
+		var file = line.substr( 2 );
+		var dir = path.dirname( file );
 		var action = line.substr( 0, 1 );
 
 		for ( let i in config.ignore ) {
@@ -310,10 +375,18 @@ class ftpClient {
 			}
 		}
 
-		if ( '-' === action ) {
-			return this.rm( path, true );
-		} else {
-			return this.put( path, true );
+		if( '+' == action ) {
+			while ( '.' !== dir ) {
+				self.pushToQueue( '*', dir );
+				dir = path.dirname(dir);
+			}
+			self.pushToQueue( '+', file );
+		} else if( '-' == action ) {
+			while ( '.' !== dir ) {
+				self.pushToQueue( '_', dir );
+				dir = path.dirname(dir);
+			}
+			self.pushToQueue( '-', file );
 		}
 	}
 }

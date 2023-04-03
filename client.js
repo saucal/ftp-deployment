@@ -101,14 +101,15 @@ class ftpClient {
 				}
 			} )
 			.then( function() {
+				if( recursive !== true ) {
+					return self.voidPromise();
+				}
 				const paths = self.leadingPaths( fileOrDir );
 				if( paths.length > 0 ) {
 					return self.rmdirIfEmpty( path.dirname( fileOrDir ) );
 				} else {
 					return self.voidPromise();
 				}
-				// TODO: Delete all directories up to this file which are empty. Replicate GIT strcuture
-				return self.voidPromise();
 			} );
 	}
 
